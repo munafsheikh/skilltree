@@ -198,7 +198,26 @@ skilltree/
 
 ## Contributing Skills
 
-Add skills under `src/skilltree/skills/built-in/` (embedded in the package) or any configured filesystem root. Run `skilltree-mcp refresh` (or the `refresh` MCP tool) to pick them up.
+Add skills under `src/skilltree/skills/built-in/` (embedded in the package) or any configured filesystem root. Run `skilltree-mcp refresh` (or the `refresh` MCP tool) to pick them up. See [docs/EXTENDING.md](docs/EXTENDING.md) for the full format and process.
+
+## Documentation
+
+| Guide | Covers |
+|---|---|
+| [docs/BUILD_AND_TEST.md](docs/BUILD_AND_TEST.md) | Dev environment setup, linting, type checking, running tests, building packages, CI |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Stdio vs SSE, Docker/docker-compose, configuration, state persistence, releases |
+| [docs/EXTENDING.md](docs/EXTENDING.md) | Architecture overview, adding skills/scopes/origin checkers/tools/transports |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | Planned and proposed future work |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute changes, PR conventions, code style |
+
+## Development & Contributing
+
+```bash
+pip install -e ".[dev]"
+pytest -v
+```
+
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow and [docs/BUILD_AND_TEST.md](docs/BUILD_AND_TEST.md) for full build/test details.
 
 ## License
 
