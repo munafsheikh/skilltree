@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from typing import Any
 
@@ -26,9 +25,10 @@ async def run_sse(host: str = "127.0.0.1", port: int = 8080) -> None:
     sse = SseServerTransport("/messages/")
 
     async def handle_sse(request: Request) -> Any:
-        async with sse.connect_sse(
-            request.scope, request.receive, request._send
-        ) as (read_stream, write_stream):
+        async with sse.connect_sse(request.scope, request.receive, request._send) as (
+            read_stream,
+            write_stream,
+        ):
             await server.mcp.run(
                 read_stream,
                 write_stream,
@@ -36,17 +36,20 @@ async def run_sse(host: str = "127.0.0.1", port: int = 8080) -> None:
             )
 
     async def handle_health(_request: Request) -> JSONResponse:
-        return JSONResponse({
-            "status": "ok",
-            "skills": len(server.registry.list_all()),
-            "version": server.mcp.name,
-        })
+        return JSONResponse(
+            {
+                "status": "ok",
+                "skills": len(server.registry.list_all()),
+                "version": server.mcp.name,
+            }
+        )
 
     async def handle_skills(request: Request) -> JSONResponse:
         scope = request.query_params.get("scope")
         tag = request.query_params.get("tag")
         if scope:
             from skilltree.models import Scope
+
             skills = server.registry.list_by_scope(Scope(scope))
         elif tag:
             skills = server.registry.list_by_tag(tag)

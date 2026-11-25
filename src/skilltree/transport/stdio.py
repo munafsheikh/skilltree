@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
-import sys
 
 from mcp.server.stdio import stdio_server
 

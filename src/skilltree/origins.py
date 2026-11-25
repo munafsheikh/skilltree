@@ -6,15 +6,14 @@ This module checks those origins to see if a newer version is available.
 
 from __future__ import annotations
 
-import json
+import contextlib
 import logging
-import subprocess
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
 
+import anyio
 import httpx
 
 from skilltree.models import OriginType, SemVer, Skill
@@ -190,10 +189,8 @@ class HTTPOriginChecker(OriginChecker):
         remote_hash = data.get("hash", data.get("content_hash", ""))
         version_str = data.get("version", "")
         if version_str:
-            try:
+            with contextlib.suppress(ValueError):
                 remote_version = SemVer.parse(version_str)
-            except ValueError:
-                pass
 
         is_outdated = False
         if remote_version and skill.version:
@@ -270,6 +267,7 @@ async def check_all_origins(skills: list[Skill]) -> list[OriginCheckResult]:
 # Helpers
 # ------------------------------------------------------------------
 
+
 def _hash_file(path: Path) -> str:
     import hashlib
 
@@ -280,7 +278,7 @@ async def _git_ls_remote(repo_url: str, ref: str) -> str | None:
     """Return the commit hash for a ref via ls-remote."""
     cmd = ["git", "ls-remote", "--quiet", repo_url, ref]
     try:
-        proc = await anyio.run_process(cmd, check=False)  # type: ignore[attr-defined]
+        proc = await anyio.run_process(cmd, check=False)
         if proc.returncode != 0:
             return None
         stdout = proc.stdout.decode("utf-8").strip()
@@ -297,7 +295,7 @@ async def _git_latest_tag(repo_url: str, ref: str) -> SemVer | None:
     """Try to find the newest semver tag reachable from ref."""
     cmd = ["git", "ls-remote", "--tags", "--sort=-v:refname", repo_url]
     try:
-        proc = await anyio.run_process(cmd, check=False)  # type: ignore[attr-defined]
+        proc = await anyio.run_process(cmd, check=False)
         if proc.returncode != 0:
             return None
         stdout = proc.stdout.decode("utf-8").strip()

@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 import logging
 import re
-import sys
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -28,10 +28,7 @@ def _built_in_root() -> Path:
 
     Works for both editable installs and packaged wheels.
     """
-    if sys.version_info >= (3, 9):
-        from importlib.resources import files
-    else:
-        from importlib_resources import files  # type: ignore[import-not-found,unused-ignore]
+    from importlib.resources import files  # type: ignore[import-not-found,unused-ignore]
 
     return files("skilltree").joinpath("skills", "built-in")  # type: ignore[return-value]
 
@@ -55,9 +52,9 @@ DEFAULT_SKILL_ROOTS: dict[Scope, list[Path]] = {
 class RegistryConfig:
     """Configuration for the skill registry."""
 
-    roots: dict[Scope, list[Path]] = field(default_factory=lambda: {
-        k: list(v) for k, v in DEFAULT_SKILL_ROOTS.items()
-    })
+    roots: dict[Scope, list[Path]] = field(
+        default_factory=lambda: {k: list(v) for k, v in DEFAULT_SKILL_ROOTS.items()}
+    )
     # Glob pattern to find skill directories
     skill_pattern: str = "**/SKILL.md"
     # File that marks a directory as a skill
@@ -73,9 +70,7 @@ class SkillRegistry:
         self.config = config or RegistryConfig()
         self._skills: dict[str, Skill] = {}
         self._trees: dict[str, SkillTree] = {}
-        self._by_scope: dict[Scope, list[Skill]] = {
-            s: [] for s in Scope
-        }
+        self._by_scope: dict[Scope, list[Skill]] = {s: [] for s in Scope}
         self._by_tag: dict[str, list[Skill]] = {}
 
     # ------------------------------------------------------------------
@@ -158,17 +153,14 @@ class SkillRegistry:
         m = _METADATA_RE.match(content)
         if m:
             import yaml
-            try:
+
+            with contextlib.suppress(Exception):
                 meta = yaml.safe_load(m.group(1)) or {}
-            except Exception:
-                pass
         # Allow JSON sidecar to override / extend
         sidecar = skill_dir / "skill.json"
         if sidecar.exists():
-            try:
+            with contextlib.suppress(Exception):
                 meta.update(json.loads(sidecar.read_text(encoding="utf-8")))
-            except Exception:
-                pass
         return meta
 
     def _index(self, skill: Skill) -> None:
@@ -190,7 +182,7 @@ class SkillRegistry:
         prefix = "skill://"
         if not uri.startswith(prefix):
             return None
-        rest = uri[len(prefix):]
+        rest = uri[len(prefix) :]
         # Format: scope/id or scope/path/with--double--dashes
         scope_str, skill_id = rest.split("/", 1)
         try:
@@ -344,10 +336,8 @@ class SkillRegistry:
             skill = self._skills.get(skill_id)
             if skill is None:
                 continue
-            try:
+            with contextlib.suppress(ValueError):
                 skill.installed_version = SemVer.parse(info.get("version", "0.0.0"))
-            except ValueError:
-                pass
             if info.get("path"):
                 skill.installed_path = Path(info["path"])
 
@@ -395,24 +385,18 @@ class SkillRegistry:
                 continue
             rv = info.get("remote_version")
             if rv:
-                try:
+                with contextlib.suppress(ValueError):
                     skill.remote_version = SemVer.parse(rv)
-                except ValueError:
-                    pass
             skill.remote_hash = info.get("remote_hash", "")
             if "last_checked" in info:
-                try:
+                with contextlib.suppress(ValueError):
                     skill.last_checked = datetime.fromisoformat(info["last_checked"])
-                except ValueError:
-                    pass
             skill.is_outdated = info.get("is_outdated", False)
             if "origin" in info:
                 skill.origin = info["origin"]
             if "origin_type" in info:
-                try:
+                with contextlib.suppress(ValueError):
                     skill.origin_type = OriginType(info["origin_type"])
-                except ValueError:
-                    pass
             if "origin_ref" in info:
                 skill.origin_ref = info["origin_ref"]
 
