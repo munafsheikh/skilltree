@@ -4,7 +4,7 @@ FROM python:3.13-slim AS builder
 WORKDIR /app
 RUN pip install --no-cache-dir uv
 
-COPY pyproject.toml ./
+COPY pyproject.toml README.md ./
 RUN mkdir -p src/skilltree && touch src/skilltree/__init__.py
 RUN uv pip install --system -e "."
 
