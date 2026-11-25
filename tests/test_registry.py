@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from skilltree.models import Scope, SemVer, Skill
+from skilltree.models import Scope, SemVer
 from skilltree.registry import RegistryConfig, SkillRegistry
 
 

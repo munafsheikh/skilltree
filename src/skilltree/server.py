@@ -8,9 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from mcp.server import Server
-from mcp.server.models import InitializationOptions
 from mcp.types import (
-    CallToolRequestParams,
     ListResourcesRequest,
     ListResourceTemplatesRequest,
     ListToolsRequest,
@@ -20,8 +18,8 @@ from mcp.types import (
     Tool,
 )
 
-from skilltree.models import Scope, Skill
-from skilltree.registry import RegistryConfig, SkillRegistry
+from skilltree.models import Scope
+from skilltree.registry import SkillRegistry
 from skilltree.search import SearchIndex
 
 logger = logging.getLogger(__name__)
@@ -174,7 +172,10 @@ class SkillTreeServer:
                 ),
                 Tool(
                     name="sync_skill",
-                    description="Update a skill's local metadata from its origin (records remote version/hash)",
+                    description=(
+                        "Update a skill's local metadata from its origin "
+                        "(records remote version/hash)"
+                    ),
                     inputSchema={
                         "type": "object",
                         "properties": {
@@ -194,7 +195,9 @@ class SkillTreeServer:
             ]
 
         @self._mcp.call_tool()
-        async def call_tool(name: str, arguments: dict[str, Any] | None = None) -> list[TextContent]:
+        async def call_tool(
+            name: str, arguments: dict[str, Any] | None = None
+        ) -> list[TextContent]:
             args = arguments or {}
             logger.debug("Tool call: %s(%s)", name, args)
 

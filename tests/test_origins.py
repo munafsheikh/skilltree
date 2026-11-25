@@ -8,7 +8,6 @@ from skilltree.models import OriginType, Scope, SemVer, Skill
 from skilltree.origins import (
     EmbeddedOriginChecker,
     LocalOriginChecker,
-    OriginCheckResult,
     check_skill_origin,
 )
 from skilltree.registry import RegistryConfig, SkillRegistry
@@ -136,6 +135,7 @@ class TestRegistryOriginState:
         skill.remote_hash = "deadbeef"
         skill.is_outdated = True
         from datetime import datetime, timezone
+
         skill.last_checked = datetime.now(timezone.utc)
 
         reg.save_origin_state(state_path)
@@ -173,3 +173,38 @@ class TestRegistryOriginState:
             remote_version=SemVer.parse("1.0.0"),
         )
         assert not skill.has_origin_update()
+
+
+@pytest.fixture
+def local_git_repo(tmp_path: Path) -> tuple[str, str]:
+    """A throwaway git repo with one commit tagged v1.2.0 and one tagged v1.10.0."""
+    import subprocess
+
+    def git(*args: str) -> str:
+        return subprocess.run(
+            ["git", "-C", str(tmp_path), *args], check=True, capture_output=True, text=True
+        ).stdout.strip()
+
+    git("init", "-q", "-b", "main")
+    git("config", "user.email", "t@example.com")
+    git("config", "user.name", "t")
+    (tmp_path / "SKILL.md").write_text("# s\n", encoding="utf-8")
+    git("add", ".")
+    git("commit", "-q", "-m", "init")
+    git("tag", "v1.2.0")
+    git("tag", "-a", "v1.10.0", "-m", "annotated")
+    return str(tmp_path), git("rev-parse", "HEAD")
+
+
+async def test_git_ls_remote_returns_commit_hash(local_git_repo: tuple[str, str]) -> None:
+    from skilltree.origins import _git_ls_remote
+
+    url, head = local_git_repo
+    assert await _git_ls_remote(url, "refs/heads/main") == head
+
+
+async def test_git_latest_tag_picks_highest_semver(local_git_repo: tuple[str, str]) -> None:
+    from skilltree.origins import _git_latest_tag
+
+    url, _ = local_git_repo
+    assert await _git_latest_tag(url, "main") == SemVer.parse("1.10.0")
